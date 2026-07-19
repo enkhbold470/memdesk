@@ -1,0 +1,37 @@
+/** Shared data shapes for memdesk. */
+
+export type EntryStatus = "active" | "idle" | "excluded";
+
+export interface Analysis {
+  /** One concise sentence describing what the user was doing. */
+  summary: string;
+  /** 1-3 short lowercase keyword tags. */
+  tags: string[];
+  /** The model that produced this analysis. */
+  model: string;
+}
+
+export interface Entry {
+  /** Local ISO timestamp with offset, e.g. 2026-07-18T12:03:00-07:00. */
+  ts: string;
+  /** Frontmost app name, or null if unavailable. */
+  app: string | null;
+  /** Frontmost window title, or null if unavailable. */
+  title: string | null;
+  status: EntryStatus;
+  /** Repo-relative path to the PNG, or null (idle / excluded / no capture). */
+  screenshot: string | null;
+  /** Vision result, or null (idle, excluded, or a failed/ pending analysis). */
+  analysis: Analysis | null;
+  /** Present only when a capture or analysis failed. */
+  error?: string;
+}
+
+export interface DaySummary {
+  date: string;
+  narrative: string;
+  shipped: string[];
+  /** Human-readable time per app, e.g. { "Code": "3h20m" }. */
+  appTime: Record<string, string>;
+  generatedAt: string;
+}

@@ -1,0 +1,9 @@
+{
+  "intervalSec": 60,
+  "retentionDays": 14,
+  "changeThreshold": 5,
+  "display": "main",
+  "analysisMode": "ocr",
+  "port": 4319,
+  "excludeApps": ["1Password", "Messages"]
+}

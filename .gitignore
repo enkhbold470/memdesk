@@ -1,0 +1,22 @@
+# secrets
+.env
+
+# generated data — never commit your screen history
+screenshots/
+data/
+logs/
+
+# runtime toggle
+PAUSED
+
+# compiled OCR helper (rebuilt on demand from ocr/ocr.swift)
+ocr/memdesk-ocr
+
+# deps
+node_modules/
+
+# macos
+.DS_Store
+
+# tooling artifacts
+.playwright-mcp/

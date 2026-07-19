@@ -1,0 +1,25 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>memdesk — activity timeline</title>
+    <link rel="stylesheet" href="/style.css" />
+  </head>
+  <body>
+    <header class="topbar">
+      <div class="brand">memdesk</div>
+      <select id="daySelect" aria-label="Select day"></select>
+      <div class="spacer"></div>
+      <span id="meta" class="meta"></span>
+    </header>
+
+    <main id="app">
+      <section id="digest" class="digest hidden"></section>
+      <section id="timeline" class="timeline"></section>
+      <div id="empty" class="empty hidden">No activity recorded for this day.</div>
+    </main>
+
+    <script src="/app.js"></script>
+  </body>
+</html>

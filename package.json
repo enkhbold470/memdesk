@@ -1,0 +1,25 @@
+{
+  "name": "memdesk",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Local screenshot journal + AI activity log for macOS",
+  "scripts": {
+    "start": "bun run src/index.ts",
+    "server": "bun run src/server.ts",
+    "digest": "bun run src/digest.ts",
+    "reanalyze": "bun run src/reanalyze.ts",
+    "check": "bun run src/check.ts",
+    "pause": "bun run src/pause.ts on",
+    "resume": "bun run src/pause.ts off",
+    "install-daemon": "bash daemon/install.sh",
+    "uninstall-daemon": "bash daemon/uninstall.sh",
+    "test": "bun test"
+  },
+  "dependencies": {
+    "sharp": "^0.33.5"
+  },
+  "devDependencies": {
+    "@types/bun": "latest"
+  }
+}
