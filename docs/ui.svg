@@ -1,0 +1,55 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="880" height="556" viewBox="0 0 880 556" font-family="system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif">
+  <rect width="880" height="556" fill="#0f1115"/>
+
+  <!-- top bar -->
+  <rect width="880" height="56" fill="#12141a"/>
+  <line x1="0" y1="56" x2="880" y2="56" stroke="#272c37"/>
+  <text x="24" y="34" fill="#e6e9ef" font-size="16" font-weight="700">memdesk</text>
+  <rect x="112" y="17" width="118" height="24" rx="7" fill="#1e222b" stroke="#272c37"/>
+  <text x="124" y="33" fill="#e6e9ef" font-size="12">2026-07-18 ▾</text>
+  <text x="856" y="33" fill="#9aa3b2" font-size="12" text-anchor="end">5 min tracked · 2 analyzed</text>
+
+  <!-- digest card -->
+  <rect x="30" y="80" width="820" height="150" rx="12" fill="#171a21" stroke="#272c37"/>
+  <text x="50" y="110" fill="#e6e9ef" font-size="15" font-weight="700">What I did</text>
+  <text x="50" y="136" fill="#e6e9ef" font-size="13">Focused morning — implemented the Pope index in focus.ts and reviewed a PR.</text>
+  <text x="58" y="164" fill="#c7cdd8" font-size="13">•  Pope engagement index in focus.ts</text>
+  <text x="58" y="186" fill="#c7cdd8" font-size="13">•  Reviewed PR #42</text>
+  <rect x="50" y="200" width="96" height="22" rx="11" fill="#1e222b" stroke="#272c37"/>
+  <text x="60" y="215" fill="#9aa3b2" font-size="12">Code · 3m</text>
+  <rect x="154" y="200" width="150" height="22" rx="11" fill="#1e222b" stroke="#272c37"/>
+  <text x="164" y="215" fill="#9aa3b2" font-size="12">Google Chrome · 1m</text>
+
+  <!-- hour header -->
+  <text x="34" y="262" fill="#9aa3b2" font-size="11" letter-spacing="0.6" font-weight="600">12:00 PM</text>
+
+  <!-- active entry with thumbnail -->
+  <rect x="30" y="276" width="820" height="98" rx="12" fill="#171a21" stroke="#272c37"/>
+  <text x="50" y="312" fill="#9aa3b2" font-size="13">12:03</text>
+  <text x="50" y="328" fill="#9aa3b2" font-size="13">PM</text>
+  <rect x="104" y="294" width="128" height="62" rx="8" fill="#1e222b" stroke="#272c37"/>
+  <rect x="116" y="308" width="90" height="6" rx="3" fill="#3a4152"/>
+  <rect x="116" y="322" width="70" height="6" rx="3" fill="#4a90d0"/>
+  <rect x="116" y="336" width="104" height="6" rx="3" fill="#3a4152"/>
+  <text x="256" y="314" fill="#e6e9ef" font-size="14">Editing focus.ts, implementing the Pope engagement index.</text>
+  <text x="256" y="336" fill="#9aa3b2" font-size="12">Code — focus.ts</text>
+  <rect x="256" y="346" width="66" height="20" rx="10" fill="#1e222b" stroke="#272c37"/>
+  <text x="266" y="360" fill="#9aa3b2" font-size="11">coding</text>
+  <rect x="330" y="346" width="86" height="20" rx="10" fill="#1e222b" stroke="#272c37"/>
+  <text x="340" y="360" fill="#9aa3b2" font-size="11">typescript</text>
+
+  <!-- idle span -->
+  <rect x="30" y="384" width="820" height="40" rx="12" fill="none" stroke="#39404e" stroke-dasharray="4 4"/>
+  <text x="50" y="409" fill="#5b6472" font-size="13">⋯ idle · 12:04 PM–12:05 PM (2 min)</text>
+
+  <!-- excluded span -->
+  <rect x="30" y="432" width="820" height="40" rx="12" fill="none" stroke="#4a3f2c" stroke-dasharray="4 4"/>
+  <text x="50" y="457" fill="#b58b4c" font-size="13">🔒 1Password — not captured · 12:18 PM (1 min)</text>
+
+  <!-- second active entry -->
+  <rect x="30" y="480" width="820" height="60" rx="12" fill="#171a21" stroke="#272c37"/>
+  <text x="50" y="506" fill="#9aa3b2" font-size="13">12:32</text>
+  <text x="50" y="522" fill="#9aa3b2" font-size="13">PM</text>
+  <text x="104" y="507" fill="#e6e9ef" font-size="14">Reviewing pull request #42 on GitHub.</text>
+  <text x="104" y="528" fill="#9aa3b2" font-size="12">Google Chrome — PR #42</text>
+</svg>

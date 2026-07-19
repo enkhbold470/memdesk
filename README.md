@@ -1,97 +1,80 @@
 # memdesk
 
-A local, all-day **screenshot journal + AI activity log** for macOS. Every minute it captures your
-primary screen; when the screen meaningfully changed, it reads the on-screen text with the built-in
-macOS OCR engine and asks a text LLM what you were doing. The result is a timestamped JSON history
-you can scroll through in a small web UI, plus an end-of-day "what I shipped" digest.
+screenshots my screen every minute, figures out what i was doing, dumps it to json i can scroll through. so i can actually answer "what did i even do today".
 
-Built with Bun + TypeScript. **In the default `ocr` mode the screenshots never leave your machine —
-only the extracted text is sent to your configured endpoint.**
+macOS only. bun + typescript.
 
-## How it works
+![the timeline](docs/ui.svg)
 
-```
-every 60s → screencapture (primary display) → frontmost app + window title
-          → perceptual-hash the frame, compare to the last one
-          → UNCHANGED → log an "idle" minute, drop the duplicate image
-          → CHANGED   → OCR the image locally (macOS Vision)
-                      → send app + title + OCR text to your endpoint → store {summary, tags}
-```
+## the idea
 
-- **Change-based** — idle stretches cost no API calls (~300–600/day instead of 1440).
-- **Retention** — history JSON is kept forever; screenshot PNGs auto-purge after 14 days.
-- **Privacy** — in `ocr` mode only text leaves your machine; `excludeApps` skips capture entirely
-  for sensitive apps; `pause`/`resume` suspends capture; `.env`, `screenshots/`, and `data/` are
-  gitignored.
+every minute: grab the screen → if it actually changed since last time, read the text off it (macOS OCR, on-device) → ask the LLM "what's this person doing" → write a line to `data/YYYY-MM-DD.jsonl`. nothing happens on idle minutes so it doesn't spam the endpoint or my disk.
 
-> **Why OCR instead of sending the image?** memdesk is built for OpenAI-compatible endpoints. Many
-> gateways (including vLLM behind a proxy) only accept text `content`, not the multimodal image
-> array. OCR mode works with any text endpoint and keeps images local. If you *do* have a
-> multimodal endpoint, set `"analysisMode": "vision"` to send the image instead.
+screenshots **stay on the machine** in the default mode — only the OCR'd text leaves. see the OCR note below for why.
 
-## Setup
+## running it
 
 ```bash
 bun install
-cp .env.example .env          # then fill in your endpoint + key
-bun run check                 # compiles the OCR helper + verifies OCR → text endpoint
+cp .env.example .env      # put your endpoint + key in
+bun run check             # sanity check: compiles the OCR bit, does one round trip
+bun start                 # the loop. ctrl-c to stop
 ```
 
-`ocr` mode compiles a tiny macOS Vision helper with `swiftc`, so you need the Xcode Command Line
-Tools (`xcode-select --install`). It builds automatically on first run.
+then to look at it:
+
+```bash
+bun run server            # http://localhost:4319
+bun run digest            # writes today's "what i shipped" summary (pass a date for another day)
+```
+
+first run macOS will nag about Screen Recording. give it to whatever's running `bun start` (your terminal / vscode), quit + reopen it, done. if screenshots come out black that's what you missed.
+
+leave it running all day:
+
+```bash
+bun run install-daemon    # launchd, starts at login
+bun run uninstall-daemon
+```
+
+other bits: `bun run pause` / `bun run resume` (stop capturing for a bit), `bun run reanalyze` (retry the LLM on lines that failed, as long as the png's still around), `bun test`.
+
+## the OCR thing
+
+wanted to just send the screenshot to the model. the endpoint i'm using (vllm behind a gateway) only takes text `content` — it 400s on the image array. so instead: OCR the screenshot locally with the macOS Vision framework (tiny swift helper, compiles itself on first run — needs xcode command line tools), send the text. bonus: the images never leave.
+
+if you've got a real multimodal endpoint, flip `"analysisMode": "vision"` in `config.json` and it sends the image instead. code's still there.
+
+## config
+
+optional `config.json` in the root, all keys optional (see `config.example.json`):
+
+- `intervalSec` — 60
+- `changeThreshold` — 5. how different a frame has to be to count as "changed" (higher = fewer calls, more stuff skipped)
+- `retentionDays` — 14. pngs older than this get deleted. the json stays forever
+- `analysisMode` — `"ocr"` (default) or `"vision"`
+- `excludeApps` — `["1Password", "Messages"]`. these never get captured at all
+- `display` — `"main"`
+- `port` — 4319
 
 `.env`:
 
 ```
-OPENAI_BASE_URL=https://app-eaae8a882a.arkor.app/v1
+OPENAI_BASE_URL=...
 OPENAI_API_KEY=...
 VISION_MODEL=gemma-4-31B-it
 ```
 
-macOS will ask for **Screen Recording** permission the first time (System Settings → Privacy &
-Security → Screen Recording → enable your terminal or `bun`, then restart it).
-
-## Use
-
-```bash
-bun start          # capture loop (Ctrl-C to stop)
-bun run server     # timeline UI at http://localhost:4319
-bun run digest     # generate today's "what I shipped" summary (add a date arg for another day)
-bun run pause      # suspend capture
-bun run resume     # resume capture
-bun run reanalyze  # retry vision on entries whose analysis failed (PNG must still exist)
-bun test           # unit + integration tests
-```
-
-Run it all day in the background:
-
-```bash
-bun run install-daemon     # launchd agent, starts at login
-bun run uninstall-daemon
-```
-
-## Config
-
-Optional `config.json` in the project root (see `config.example.json`):
-
-| Key | Default | Meaning |
-|---|---|---|
-| `intervalSec` | `60` | Seconds between captures |
-| `retentionDays` | `14` | Delete screenshot PNGs older than this |
-| `changeThreshold` | `5` | Max hash distance still treated as "same frame" (higher = fewer calls) |
-| `display` | `"main"` | `"main"` for the primary monitor, or a numeric display id |
-| `analysisMode` | `"ocr"` | `"ocr"` (OCR locally, send text) or `"vision"` (send the image) |
-| `port` | `4319` | Web UI port |
-| `excludeApps` | `["1Password", "Messages"]` | Capture skipped when one of these is frontmost |
-
-## Data layout
+## where stuff lives
 
 ```
-data/2026-07-18.jsonl          # one JSON entry per minute
-data/2026-07-18.summary.json   # daily digest (narrative, shipped[], appTime{})
-screenshots/2026-07-18/HHMMSS.png
+data/2026-07-18.jsonl          one line per minute
+data/2026-07-18.summary.json   the daily digest
+screenshots/2026-07-18/*.png   the frames (auto-deleted after retentionDays)
 ```
 
-## Not included (v1)
+all gitignored. this is your screen history — don't commit it.
 
-Multi-monitor / active-window-only capture, OCR, cross-day search, non-macOS support, cloud sync.
+## not doing (yet)
+
+multiple monitors, single-window capture, search across days, anything non-mac, cloud sync.
