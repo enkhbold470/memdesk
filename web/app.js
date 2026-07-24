@@ -161,7 +161,22 @@ async function loadDay(day) {
   metaEl.textContent = `${data.entries ? data.entries.length : 0} min tracked · ${active} analyzed`;
 }
 
+// Synthetic demo data must be visibly labelled — a viewer of a recording has
+// no other way to know these aren't real minutes of someone's life.
+async function markDemo() {
+  try {
+    const meta = await (await fetch("/api/meta")).json();
+    if (!meta.demo) return;
+    const pill = el("span", "demopill", "demo data");
+    pill.title = "Synthetic sample data, not a real screen recording.";
+    document.querySelector(".brand").after(pill);
+  } catch {
+    // A missing /api/meta just means an older server; not worth failing over.
+  }
+}
+
 async function init() {
+  await markDemo();
   const days = await (await fetch("/api/days")).json();
   if (!days.length) {
     emptyEl.classList.remove("hidden");

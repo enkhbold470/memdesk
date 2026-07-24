@@ -23,7 +23,8 @@ export interface Config {
   excludeApps: string[];
   /**
    * Which backend analyzes frames:
-   * - "auto"  → local (Ollama) when it can serve the model, cloud otherwise.
+   * - "auto"  → cloud first, falling back to Ollama when cloud doesn't answer.
+   *             Keeps the local model unloaded while cloud is working.
    * - "local" → Ollama only. Nothing leaves the machine.
    * - "cloud" → the hosted endpoint only.
    */
@@ -35,6 +36,12 @@ export interface Config {
   // --- local endpoint (from env) ---
   localBaseUrl: string;
   localModel: string;
+  /**
+   * Demo mode: read/write a synthetic day under demo/ instead of your real
+   * screen history, so the UI can be recorded and shared. Never mixes with
+   * real data — it's a different directory entirely.
+   */
+  demo: boolean;
   // --- resolved paths ---
   rootDir: string;
   dataDir: string;
@@ -63,6 +70,7 @@ export interface Env {
   VISION_MODEL?: string;
   OLLAMA_BASE_URL?: string;
   OLLAMA_MODEL?: string;
+  MEMDESK_DEMO?: string;
 }
 
 export const DEFAULTS = {
@@ -80,6 +88,7 @@ export const DEFAULTS = {
 
 /** Pure merge of defaults + config.json + env + resolved paths. Unit-testable. */
 export function mergeConfig(rootDir: string, file: FileConfig, env: Env): Config {
+  const demo = env.MEMDESK_DEMO === "1";
   return {
     intervalSec: file.intervalSec ?? DEFAULTS.intervalSec,
     retentionDays: file.retentionDays ?? DEFAULTS.retentionDays,
@@ -94,9 +103,10 @@ export function mergeConfig(rootDir: string, file: FileConfig, env: Env): Config
     model: env.VISION_MODEL ?? "gemma-4-31B-it",
     localBaseUrl: env.OLLAMA_BASE_URL ?? DEFAULTS.localBaseUrl,
     localModel: env.OLLAMA_MODEL ?? DEFAULTS.localModel,
+    demo,
     rootDir,
-    dataDir: join(rootDir, "data"),
-    screenshotsDir: join(rootDir, "screenshots"),
+    dataDir: join(rootDir, demo ? "demo/data" : "data"),
+    screenshotsDir: join(rootDir, demo ? "demo/screenshots" : "screenshots"),
     webDir: join(rootDir, "web"),
   };
 }

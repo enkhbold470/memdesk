@@ -31,6 +31,12 @@ export interface Entry {
   analysis: Analysis | null;
   /** Present only when a capture or analysis failed. */
   error?: string;
+  /**
+   * Fabricated demo data, not a real recording of anyone's screen. Set only
+   * by `bun run demo`. The flag lives in the data itself so a synthetic entry
+   * can never be mistaken for a real one, whatever the UI happens to show.
+   */
+  synthetic?: true;
 }
 
 export interface DaySummary {
@@ -40,4 +46,6 @@ export interface DaySummary {
   /** Human-readable time per app, e.g. { "Code": "3h20m" }. */
   appTime: Record<string, string>;
   generatedAt: string;
+  /** See Entry.synthetic. */
+  synthetic?: true;
 }

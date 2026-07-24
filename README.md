@@ -65,7 +65,20 @@ bun run install-daemon    # launchd, starts at login
 bun run uninstall-daemon
 ```
 
-other bits: `bun run pause` / `bun run resume` (stop capturing for a bit), `bun run reanalyze` (retry the LLM on lines that failed, as long as the png's still around), `bun test`.
+other bits: `bun run pause` / `bun run resume` (stop capturing for a bit), `bun run reanalyze` (retry the LLM on lines that failed, as long as the png's still around), `bun run demo` (synthetic data for screen recordings — see below), `bun test`.
+
+## demoing it
+
+the timeline renders **your actual screen history**, so recording it to share would publish whatever was on screen. there's a separate synthetic dataset for that:
+
+```bash
+bun run demo          # generate a fake couple of days + serve them
+bun run demo:serve    # re-serve without regenerating
+```
+
+it writes to `demo/` and never reads or touches `data/` or `screenshots/`. the frames are drawn, not captured — abstract mockups of an editor, a terminal, a browser — so there's no real text in them. every entry carries `synthetic: true` in the json and the UI shows a **demo data** pill in the header, which stays visible in a recording. don't remove it: a timeline is a claim about how someone spent their day, and a fabricated one has to say so.
+
+`demo/` is gitignored — regenerate it with `bun run demo`.
 
 ## the OCR thing
 

@@ -6,6 +6,9 @@ screenshots/
 data/
 logs/
 
+# generated demo fixtures (rebuild with `bun run demo`)
+demo/
+
 # runtime toggle
 PAUSED
 

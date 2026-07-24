@@ -45,6 +45,18 @@ describe("mergeConfig", () => {
     expect(hasCloudCreds(mergeConfig("/root", {}, { OPENAI_BASE_URL: "x" }))).toBe(false);
   });
 
+  test("demo mode redirects data and screenshots away from real history", () => {
+    const real = mergeConfig("/root", {}, {});
+    expect(real.demo).toBe(false);
+    expect(real.dataDir).toBe("/root/data");
+    expect(real.screenshotsDir).toBe("/root/screenshots");
+
+    const demo = mergeConfig("/root", {}, { MEMDESK_DEMO: "1" });
+    expect(demo.demo).toBe(true);
+    expect(demo.dataDir).toBe("/root/demo/data");
+    expect(demo.screenshotsDir).toBe("/root/demo/screenshots");
+  });
+
   test("provider defaults to auto and can be pinned via config.json", () => {
     expect(mergeConfig("/root", {}, {}).provider).toBe("auto");
     expect(mergeConfig("/root", { provider: "local" }, {}).provider).toBe("local");

@@ -7,6 +7,8 @@
   "scripts": {
     "start": "bun run src/index.ts",
     "server": "bun run src/server.ts",
+    "demo": "MEMDESK_DEMO=1 bun run src/demo.ts && MEMDESK_DEMO=1 bun run src/server.ts",
+    "demo:serve": "MEMDESK_DEMO=1 bun run src/server.ts",
     "digest": "bun run src/digest.ts",
     "reanalyze": "bun run src/reanalyze.ts",
     "check": "bun run src/check.ts",

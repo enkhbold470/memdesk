@@ -207,3 +207,15 @@ main {
   text-align: center;
   padding: 60px 0;
 }
+
+/* Synthetic-data marker. Deliberately legible in a screen recording. */
+.demopill {
+  border: 1px solid var(--excluded);
+  color: var(--excluded);
+  border-radius: 999px;
+  padding: 2px 9px;
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}

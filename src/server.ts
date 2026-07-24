@@ -37,6 +37,10 @@ const server = Bun.serve({
     if (path === "/app.js") return serveFile(join(cfg.webDir, "app.js"));
     if (path === "/style.css") return serveFile(join(cfg.webDir, "style.css"));
 
+    if (path === "/api/meta") {
+      return jsonResponse({ demo: cfg.demo });
+    }
+
     if (path === "/api/days") {
       return jsonResponse(await listDays(cfg));
     }
@@ -62,3 +66,6 @@ const server = Bun.serve({
 });
 
 console.log(`[memdesk] timeline UI → http://localhost:${server.port}`);
+if (cfg.demo) {
+  console.log(`[memdesk] DEMO MODE — serving synthetic data from demo/, not your real history.`);
+}
