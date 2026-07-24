@@ -1,0 +1,48 @@
+name: ci
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+# Declared here rather than relying on the repo-level default, which is read-only
+# today but can be flipped org-wide without anyone touching this file.
+permissions:
+  contents: read
+
+# A new push to a PR makes the in-flight run pointless.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  test:
+    # memdesk is macOS-only, so it's checked on macOS. A green run on Linux would
+    # be claiming more than it verifies.
+    runs-on: macos-latest
+
+    steps:
+      # Without this, checkout leaves the token in .git/config as an extraheader,
+      # where `bun install` lifecycle scripts and the test run could read it.
+      # Nothing here pushes, so there's nothing to keep it for.
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: 1.3.2
+
+      - run: bun install --frozen-lockfile
+
+      - name: Typecheck
+        run: bun run typecheck
+
+      - name: Unit tests
+        run: bun test
+
+      # The OCR helper is a Swift binary compiled on first use. Nothing in the
+      # test suite touches it, so compile it here — a broken build should fail CI
+      # rather than a user's first run.
+      - name: Compile the OCR helper
+        run: swiftc -O ocr/ocr.swift -o /tmp/memdesk-ocr
