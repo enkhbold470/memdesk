@@ -16,7 +16,7 @@ bun test
 macOS only, and you need Xcode command line tools for the OCR helper (`xcode-select
 --install`). first run will ask for Screen Recording permission — grant it to
 whatever is running `bun start` (your terminal, vscode), then quit and reopen that
-app. black screenshots means you missed this.
+app. black screenshots mean you missed this.
 
 ## before you open a PR
 
@@ -25,7 +25,8 @@ bun run typecheck
 bun test
 ```
 
-CI runs both on macOS, plus it compiles `ocr/ocr.swift`. that's the whole gate.
+CI runs both of those on macOS — the only platform it runs on — plus a compile of
+`ocr/ocr.swift`. that's the whole gate.
 
 ## working on it without recording your own screen
 
