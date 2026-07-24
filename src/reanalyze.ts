@@ -1,8 +1,9 @@
 import { existsSync } from "node:fs";
 import { join } from "node:path";
 import { runAnalysis } from "./analyze.ts";
-import { hasVisionCreds, loadConfig } from "./config.ts";
+import { loadConfig } from "./config.ts";
 import { ensureOcrBinary } from "./ocr.ts";
+import { resolveProviders } from "./provider.ts";
 import { dayKey, readDay, rewriteDay } from "./store.ts";
 
 /**
@@ -11,10 +12,12 @@ import { dayKey, readDay, rewriteDay } from "./store.ts";
  */
 if (import.meta.main) {
   const cfg = loadConfig();
-  if (!hasVisionCreds(cfg)) {
-    console.error("[memdesk] no vision credentials — cannot reanalyze. Fill in .env.");
+  const available = await resolveProviders(cfg, { needsVision: cfg.analysisMode === "vision" });
+  if (available.length === 0) {
+    console.error("[memdesk] no provider available — cannot reanalyze. Start Ollama, or fill in .env.");
     process.exit(1);
   }
+  console.log(`[memdesk] using ${available.map((p) => `${p.name}(${p.model})`).join(" then ")}`);
   const day = process.argv[2] ?? dayKey();
   const entries = await readDay(cfg, day);
   const ocrBinary = cfg.analysisMode === "vision" ? null : await ensureOcrBinary(cfg);

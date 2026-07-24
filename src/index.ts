@@ -3,10 +3,11 @@ import { join } from "node:path";
 import { runAnalysis } from "./analyze.ts";
 import { captureScreen, CaptureError, isBlank, PERMISSION_HINT } from "./capture.ts";
 import { averageHash, isChanged } from "./changedetect.ts";
-import { hasVisionCreds, loadConfig, type Config } from "./config.ts";
+import { loadConfig, type Config } from "./config.ts";
 import { getContext, isExcluded } from "./context.ts";
 import { ensureOcrBinary } from "./ocr.ts";
 import { isPaused } from "./pause.ts";
+import { resolveProviders } from "./provider.ts";
 import { appendEntry, dayKey, hhmmss, localISO, purgeOldScreenshots } from "./store.ts";
 import type { Analysis, Entry } from "./types.ts";
 
@@ -76,19 +77,17 @@ export async function tick(cfg: Config, state: LoopState): Promise<void> {
   }
   if (hash !== null) state.lastHash = hash;
 
+  // Provider availability is decided per tick inside runAnalysis, so Ollama
+  // starting or stopping mid-day is picked up without a restart.
   let analysis: Analysis | null = null;
   let error: string | undefined;
-  if (!hasVisionCreds(cfg)) {
-    error = "no vision credentials (set OPENAI_BASE_URL / OPENAI_API_KEY / VISION_MODEL)";
-  } else {
-    try {
-      if (cfg.analysisMode !== "vision" && state.ocrBinary === undefined) {
-        state.ocrBinary = await ensureOcrBinary(cfg);
-      }
-      analysis = await runAnalysis(cfg, outPath, app, title, state.ocrBinary ?? null);
-    } catch (e) {
-      error = e instanceof Error ? e.message : String(e);
+  try {
+    if (cfg.analysisMode !== "vision" && state.ocrBinary === undefined) {
+      state.ocrBinary = await ensureOcrBinary(cfg);
     }
+    analysis = await runAnalysis(cfg, outPath, app, title, state.ocrBinary ?? null);
+  } catch (e) {
+    error = e instanceof Error ? e.message : String(e);
   }
 
   const entry: Entry = { ts, app, title, status: "active", screenshot: relPath, analysis };
@@ -116,8 +115,17 @@ async function main(): Promise<void> {
     `[memdesk] capturing the ${cfg.display === "main" ? "main" : `#${cfg.display}`} display ` +
       `every ${cfg.intervalSec}s (${cfg.analysisMode} mode) → ${cfg.dataDir}`,
   );
-  if (!hasVisionCreds(cfg)) {
-    console.warn("[memdesk] no vision credentials — recording app/title only. Fill in .env to enable AI summaries.");
+
+  const providers = await resolveProviders(cfg, { needsVision: cfg.analysisMode === "vision" });
+  if (providers.length === 0) {
+    console.warn(
+      "[memdesk] no provider reachable — recording app/title only. " +
+        "Start Ollama, or fill in .env to enable AI summaries.",
+    );
+  } else {
+    console.log(
+      `[memdesk] provider: ${cfg.provider} → ${providers.map((p) => `${p.name}(${p.model})`).join(" then ")}`,
+    );
   }
   console.log(PERMISSION_HINT);
 

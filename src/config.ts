@@ -21,10 +21,20 @@ export interface Config {
   port: number;
   /** Frontmost apps for which capture is skipped entirely (case-insensitive substring). */
   excludeApps: string[];
-  // --- vision endpoint (from env) ---
+  /**
+   * Which backend analyzes frames:
+   * - "auto"  → local (Ollama) when it can serve the model, cloud otherwise.
+   * - "local" → Ollama only. Nothing leaves the machine.
+   * - "cloud" → the hosted endpoint only.
+   */
+  provider: "auto" | "local" | "cloud";
+  // --- cloud endpoint (from env) ---
   baseUrl: string;
   apiKey: string;
   model: string;
+  // --- local endpoint (from env) ---
+  localBaseUrl: string;
+  localModel: string;
   // --- resolved paths ---
   rootDir: string;
   dataDir: string;
@@ -43,6 +53,7 @@ export type FileConfig = Partial<
     | "analysisMode"
     | "port"
     | "excludeApps"
+    | "provider"
   >
 >;
 
@@ -50,6 +61,8 @@ export interface Env {
   OPENAI_BASE_URL?: string;
   OPENAI_API_KEY?: string;
   VISION_MODEL?: string;
+  OLLAMA_BASE_URL?: string;
+  OLLAMA_MODEL?: string;
 }
 
 export const DEFAULTS = {
@@ -60,6 +73,9 @@ export const DEFAULTS = {
   analysisMode: "ocr" as "ocr" | "vision",
   port: 4319,
   excludeApps: ["1Password", "Messages"],
+  provider: "auto" as "auto" | "local" | "cloud",
+  localBaseUrl: "http://localhost:11434/v1",
+  localModel: "gemma4:e2b",
 };
 
 /** Pure merge of defaults + config.json + env + resolved paths. Unit-testable. */
@@ -72,9 +88,12 @@ export function mergeConfig(rootDir: string, file: FileConfig, env: Env): Config
     analysisMode: file.analysisMode ?? DEFAULTS.analysisMode,
     port: file.port ?? DEFAULTS.port,
     excludeApps: file.excludeApps ?? DEFAULTS.excludeApps,
+    provider: file.provider ?? DEFAULTS.provider,
     baseUrl: env.OPENAI_BASE_URL ?? "",
     apiKey: env.OPENAI_API_KEY ?? "",
     model: env.VISION_MODEL ?? "gemma-4-31B-it",
+    localBaseUrl: env.OLLAMA_BASE_URL ?? DEFAULTS.localBaseUrl,
+    localModel: env.OLLAMA_MODEL ?? DEFAULTS.localModel,
     rootDir,
     dataDir: join(rootDir, "data"),
     screenshotsDir: join(rootDir, "screenshots"),
@@ -102,7 +121,7 @@ export function loadConfig(): Config {
   return mergeConfig(rootDir, file, process.env as Env);
 }
 
-/** True when the endpoint credentials needed for vision are present. */
-export function hasVisionCreds(cfg: Config): boolean {
+/** True when the cloud endpoint credentials are all present. */
+export function hasCloudCreds(cfg: Config): boolean {
   return Boolean(cfg.baseUrl && cfg.apiKey && cfg.model);
 }

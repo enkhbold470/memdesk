@@ -1,4 +1,5 @@
-import { hasVisionCreds, loadConfig, type Config } from "./config.ts";
+import { loadConfig, type Config } from "./config.ts";
+import { markFailed, resolveProviders, type Provider, type ResolveOpts } from "./provider.ts";
 import { dayKey, readDay, writeSummary } from "./store.ts";
 import type { DaySummary, Entry } from "./types.ts";
 
@@ -46,18 +47,19 @@ interface SummarizeResult {
 
 /** Call the endpoint (text-only) to narrate the day. Throws on failure. */
 export async function summarizeDay(
-  cfg: Config,
+  provider: Provider,
   logText: string,
   fetchImpl: typeof fetch = fetch,
 ): Promise<SummarizeResult> {
-  const url = `${cfg.baseUrl.replace(/\/+$/, "")}/chat/completions`;
+  const url = `${provider.baseUrl.replace(/\/+$/, "")}/chat/completions`;
   const res = await fetchImpl(url, {
     method: "POST",
-    headers: { "content-type": "application/json", authorization: `Bearer ${cfg.apiKey}` },
+    headers: { "content-type": "application/json", authorization: `Bearer ${provider.apiKey}` },
     body: JSON.stringify({
-      model: cfg.model,
+      model: provider.model,
       max_tokens: 500,
       temperature: 0.3,
+      ...provider.extraBody,
       messages: [
         { role: "system", content: DIGEST_SYSTEM },
         { role: "user", content: logText || "(no recorded activity)" },
@@ -83,22 +85,38 @@ export async function summarizeDay(
 }
 
 /** Generate and persist a day's summary. Returns it. */
-export async function generateDigest(cfg: Config, day: string): Promise<DaySummary> {
+export async function generateDigest(
+  cfg: Config,
+  day: string,
+  resolveOpts: ResolveOpts = {},
+): Promise<DaySummary> {
   const entries = await readDay(cfg, day);
   const appTime = computeAppTime(entries, cfg.intervalSec / 60);
 
+  // The digest follows the same auto-selection as per-minute analysis.
+  const providers = await resolveProviders(cfg, resolveOpts);
   let narrative = "";
   let shipped: string[] = [];
-  if (hasVisionCreds(cfg)) {
-    try {
-      const r = await summarizeDay(cfg, buildDigestPrompt(entries));
-      narrative = r.narrative;
-      shipped = r.shipped;
-    } catch (e) {
-      narrative = `(summary unavailable: ${e instanceof Error ? e.message : String(e)})`;
-    }
+  if (providers.length === 0) {
+    narrative = "(no provider available — app time only)";
   } else {
-    narrative = "(no vision credentials — app time only)";
+    const prompt = buildDigestPrompt(entries);
+    let lastErr: unknown;
+    for (const provider of providers) {
+      try {
+        const r = await summarizeDay(provider, prompt);
+        narrative = r.narrative;
+        shipped = r.shipped;
+        lastErr = undefined;
+        break;
+      } catch (e) {
+        lastErr = e;
+        markFailed(provider.name, e instanceof Error ? e.message : String(e), resolveOpts);
+      }
+    }
+    if (lastErr) {
+      narrative = `(summary unavailable: ${lastErr instanceof Error ? lastErr.message : String(lastErr)})`;
+    }
   }
 
   const summary: DaySummary = {

@@ -9,6 +9,12 @@ export interface Analysis {
   tags: string[];
   /** The model that produced this analysis. */
   model: string;
+  /**
+   * Which backend produced it. Recorded per entry because in "auto" mode the
+   * choice varies minute to minute — this is how you audit whether a given
+   * minute's screen text stayed on the machine or went to the cloud.
+   */
+  provider: "local" | "cloud";
 }
 
 export interface Entry {

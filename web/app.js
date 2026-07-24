@@ -95,9 +95,20 @@ function renderActive(entry) {
   }
   const app = [entry.app, entry.title].filter(Boolean).join(" — ");
   if (app) body.appendChild(el("div", "app", app));
-  if (entry.analysis && entry.analysis.tags && entry.analysis.tags.length) {
+  const tags = entry.analysis && entry.analysis.tags ? entry.analysis.tags : [];
+  if (tags.length || (entry.analysis && entry.analysis.provider)) {
     const chips = el("div", "chips");
-    for (const t of entry.analysis.tags) chips.appendChild(el("span", "chip", t));
+    for (const t of tags) chips.appendChild(el("span", "chip", t));
+    // Where this minute's screen text went. In "auto" mode it varies per entry.
+    if (entry.analysis.provider) {
+      const p = entry.analysis.provider;
+      const badge = el("span", "chip provider " + p, p === "local" ? "local" : "cloud");
+      badge.title =
+        (p === "local"
+          ? "Analyzed on this machine — nothing was sent off-device."
+          : "Sent to the cloud endpoint.") + " Model: " + (entry.analysis.model || "?");
+      chips.appendChild(badge);
+    }
     body.appendChild(chips);
   }
   row.appendChild(body);

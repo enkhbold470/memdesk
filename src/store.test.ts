@@ -55,7 +55,7 @@ describe("append/read", () => {
   test("rewriteDay overwrites in place", async () => {
     await appendEntry(cfg, entry("2026-07-18T09:00:00-07:00"));
     const day = await readDay(cfg, "2026-07-18");
-    day[0]!.analysis = { summary: "did a thing", tags: ["x"], model: "m" };
+    day[0]!.analysis = { summary: "did a thing", tags: ["x"], model: "m", provider: "cloud" };
     await rewriteDay(cfg, "2026-07-18", day);
     const again = await readDay(cfg, "2026-07-18");
     expect(again).toHaveLength(1);

@@ -1,10 +1,9 @@
+import type { Provider } from "./provider.ts";
 import type { Analysis } from "./types.ts";
 
 export interface AnalyzeOpts {
   imagePath: string;
-  baseUrl: string;
-  apiKey: string;
-  model: string;
+  provider: Provider;
   app: string | null;
   title: string | null;
   timeoutMs?: number;
@@ -55,15 +54,14 @@ async function toDataUrl(imagePath: string): Promise<string> {
 export async function analyzeImage(opts: AnalyzeOpts): Promise<Analysis> {
   const {
     imagePath,
-    baseUrl,
-    apiKey,
-    model,
+    provider,
     app,
     title,
     timeoutMs = 30_000,
     retries = 1,
     fetchImpl = fetch,
   } = opts;
+  const { baseUrl, apiKey, model } = provider;
 
   const dataUrl = await toDataUrl(imagePath);
   const url = `${baseUrl.replace(/\/+$/, "")}/chat/completions`;
@@ -71,6 +69,7 @@ export async function analyzeImage(opts: AnalyzeOpts): Promise<Analysis> {
     model,
     max_tokens: 200,
     temperature: 0.2,
+    ...provider.extraBody,
     messages: [
       { role: "system", content: SYSTEM_PROMPT },
       {
@@ -111,7 +110,7 @@ export async function analyzeImage(opts: AnalyzeOpts): Promise<Analysis> {
       if (typeof content !== "string") throw new Error("no text content in response");
       const { summary, tags } = parseVisionContent(content);
       if (!summary) throw new Error("empty summary in response");
-      return { summary, tags, model };
+      return { summary, tags, model, provider: provider.name };
     } catch (e) {
       lastErr = e;
     } finally {

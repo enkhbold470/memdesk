@@ -9,7 +9,7 @@ function e(app: string | null, status: Entry["status"], summary?: string): Entry
     title: null,
     status,
     screenshot: null,
-    analysis: summary ? { summary, tags: [], model: "m" } : null,
+    analysis: summary ? { summary, tags: [], model: "m", provider: "cloud" } : null,
   };
 }
 

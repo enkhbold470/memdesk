@@ -1,5 +1,5 @@
 import { describe, expect, test } from "bun:test";
-import { DEFAULTS, hasVisionCreds, mergeConfig } from "./config.ts";
+import { DEFAULTS, hasCloudCreds, mergeConfig } from "./config.ts";
 
 describe("mergeConfig", () => {
   test("uses defaults when file and env are empty", () => {
@@ -31,7 +31,7 @@ describe("mergeConfig", () => {
     expect(cfg.baseUrl).toBe("https://x/v1");
     expect(cfg.apiKey).toBe("k");
     expect(cfg.model).toBe("m");
-    expect(hasVisionCreds(cfg)).toBe(true);
+    expect(hasCloudCreds(cfg)).toBe(true);
   });
 
   test("resolves paths under rootDir", () => {
@@ -41,7 +41,21 @@ describe("mergeConfig", () => {
     expect(cfg.webDir).toBe("/root/web");
   });
 
-  test("hasVisionCreds is false when any credential is missing", () => {
-    expect(hasVisionCreds(mergeConfig("/root", {}, { OPENAI_BASE_URL: "x" }))).toBe(false);
+  test("hasCloudCreds is false when any credential is missing", () => {
+    expect(hasCloudCreds(mergeConfig("/root", {}, { OPENAI_BASE_URL: "x" }))).toBe(false);
+  });
+
+  test("provider defaults to auto and can be pinned via config.json", () => {
+    expect(mergeConfig("/root", {}, {}).provider).toBe("auto");
+    expect(mergeConfig("/root", { provider: "local" }, {}).provider).toBe("local");
+  });
+
+  test("local endpoint defaults, overridable by env", () => {
+    const d = mergeConfig("/root", {}, {});
+    expect(d.localBaseUrl).toBe("http://localhost:11434/v1");
+    expect(d.localModel).toBe("gemma4:e2b");
+    const o = mergeConfig("/root", {}, { OLLAMA_BASE_URL: "http://box:1/v1", OLLAMA_MODEL: "x" });
+    expect(o.localBaseUrl).toBe("http://box:1/v1");
+    expect(o.localModel).toBe("x");
   });
 });

@@ -3,7 +3,17 @@ import { mkdtemp, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import sharp from "sharp";
+import type { Provider } from "./provider.ts";
 import { analyzeImage, parseVisionContent } from "./vision.ts";
+
+const cloud: Provider = {
+  name: "cloud",
+  baseUrl: "https://x/v1",
+  apiKey: "k",
+  model: "m",
+  supportsVision: true,
+  extraBody: {},
+};
 
 let img: string;
 
@@ -60,14 +70,17 @@ describe("analyzeImage", () => {
       okResponse('{"summary":"Editing focus.ts","tags":["coding"]}')) as unknown as typeof fetch;
     const r = await analyzeImage({
       imagePath: img,
-      baseUrl: "https://x/v1",
-      apiKey: "k",
-      model: "m",
+      provider: cloud,
       app: "Code",
       title: "focus.ts",
       fetchImpl,
     });
-    expect(r).toEqual({ summary: "Editing focus.ts", tags: ["coding"], model: "m" });
+    expect(r).toEqual({
+      summary: "Editing focus.ts",
+      tags: ["coding"],
+      model: "m",
+      provider: "cloud",
+    });
   });
 
   test("retries once then throws on persistent failure", async () => {
@@ -82,9 +95,7 @@ describe("analyzeImage", () => {
     await expect(
       analyzeImage({
         imagePath: img,
-        baseUrl: "https://x/v1",
-        apiKey: "k",
-        model: "m",
+        provider: cloud,
         app: null,
         title: null,
         retries: 1,
@@ -106,9 +117,7 @@ describe("analyzeImage", () => {
 
     const r = await analyzeImage({
       imagePath: img,
-      baseUrl: "https://x/v1",
-      apiKey: "k",
-      model: "m",
+      provider: cloud,
       app: null,
       title: null,
       retries: 1,

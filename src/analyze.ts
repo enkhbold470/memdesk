@@ -1,12 +1,11 @@
 import type { Config } from "./config.ts";
 import { ocrImage } from "./ocr.ts";
+import { markFailed, resolveProviders, type Provider, type ResolveOpts } from "./provider.ts";
 import type { Analysis } from "./types.ts";
 import { analyzeImage, parseVisionContent } from "./vision.ts";
 
 export interface AnalyzeActivityOpts {
-  baseUrl: string;
-  apiKey: string;
-  model: string;
+  provider: Provider;
   app: string | null;
   title: string | null;
   ocrText: string;
@@ -38,9 +37,7 @@ export function buildActivityPrompt(app: string | null, title: string | null, oc
  */
 export async function analyzeActivity(opts: AnalyzeActivityOpts): Promise<Analysis> {
   const {
-    baseUrl,
-    apiKey,
-    model,
+    provider,
     app,
     title,
     ocrText,
@@ -48,12 +45,14 @@ export async function analyzeActivity(opts: AnalyzeActivityOpts): Promise<Analys
     retries = 1,
     fetchImpl = fetch,
   } = opts;
+  const { baseUrl, apiKey, model } = provider;
 
   const url = `${baseUrl.replace(/\/+$/, "")}/chat/completions`;
   const body = {
     model,
     max_tokens: 200,
     temperature: 0.2,
+    ...provider.extraBody,
     messages: [
       { role: "system", content: SYSTEM_PROMPT },
       { role: "user", content: buildActivityPrompt(app, title, ocrText) },
@@ -80,7 +79,7 @@ export async function analyzeActivity(opts: AnalyzeActivityOpts): Promise<Analys
       if (typeof content !== "string") throw new Error("no text content in response");
       const { summary, tags } = parseVisionContent(content);
       if (!summary) throw new Error("empty summary in response");
-      return { summary, tags, model };
+      return { summary, tags, model, provider: provider.name };
     } catch (e) {
       lastErr = e;
     } finally {
@@ -95,6 +94,10 @@ export async function analyzeActivity(opts: AnalyzeActivityOpts): Promise<Analys
  * - "ocr"    → OCR the image locally, then summarize the text (image stays local).
  * - "vision" → send the image to a multimodal endpoint.
  * `ocrBinary` is the resolved OCR helper path (null when unavailable).
+ *
+ * Tries each resolved provider in order. A local failure falls through to
+ * cloud and marks local unhealthy, so one broken model doesn't cost an entry
+ * every minute for the rest of the day.
  */
 export async function runAnalysis(
   cfg: Config,
@@ -102,27 +105,40 @@ export async function runAnalysis(
   app: string | null,
   title: string | null,
   ocrBinary: string | null,
+  resolveOpts: ResolveOpts = {},
 ): Promise<Analysis> {
-  if (cfg.analysisMode === "vision") {
-    return analyzeImage({
-      imagePath,
-      baseUrl: cfg.baseUrl,
-      apiKey: cfg.apiKey,
-      model: cfg.model,
-      app,
-      title,
-    });
+  const needsVision = cfg.analysisMode === "vision";
+  const providers = await resolveProviders(cfg, { ...resolveOpts, needsVision });
+  if (providers.length === 0) {
+    throw new Error(
+      needsVision
+        ? "no multimodal provider available (start Ollama with a vision model, or set cloud credentials in .env)"
+        : "no provider available (start Ollama, or set OPENAI_BASE_URL / OPENAI_API_KEY / VISION_MODEL in .env)",
+    );
   }
-  if (!ocrBinary) {
-    throw new Error("OCR helper unavailable — needs swiftc (Xcode Command Line Tools)");
+
+  // OCR once, outside the provider loop — it's local work and provider-independent.
+  let ocrText = "";
+  if (!needsVision) {
+    if (!ocrBinary) {
+      throw new Error("OCR helper unavailable — needs swiftc (Xcode Command Line Tools)");
+    }
+    ocrText = await ocrImage(ocrBinary, imagePath);
   }
-  const ocrText = await ocrImage(ocrBinary, imagePath);
-  return analyzeActivity({
-    baseUrl: cfg.baseUrl,
-    apiKey: cfg.apiKey,
-    model: cfg.model,
-    app,
-    title,
-    ocrText,
-  });
+
+  let lastErr: unknown;
+  for (const [i, provider] of providers.entries()) {
+    // Don't spend the retry budget on a provider that has a fallback behind
+    // it — reaching the fallback quickly matters more than retrying this one.
+    const retries = i === providers.length - 1 ? 1 : 0;
+    try {
+      return needsVision
+        ? await analyzeImage({ imagePath, provider, app, title, retries })
+        : await analyzeActivity({ provider, app, title, ocrText, retries });
+    } catch (e) {
+      lastErr = e;
+      markFailed(provider.name, e instanceof Error ? e.message : String(e), resolveOpts);
+    }
+  }
+  throw lastErr instanceof Error ? lastErr : new Error(String(lastErr));
 }

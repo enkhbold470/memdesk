@@ -12,6 +12,34 @@ every minute: grab the screen → if it actually changed since last time, read t
 
 screenshots **stay on the machine** in the default mode — only the OCR'd text leaves. see the OCR note below for why.
 
+## cloud, with a local fallback
+
+two backends:
+
+- **cloud** — an openai-compatible endpoint (arkor), `gemma-4-31B-it`. this is the default.
+- **local** — [ollama](https://ollama.com), `gemma4:e2b`. the fallback, for when you're offline.
+
+`"provider": "auto"` (the default) goes to cloud first and only reaches for ollama when cloud doesn't answer. that ordering is deliberate: a local model big enough to be useful will fight your actual work for RAM, so it should only spin up when it's the only option. the local model is **never loaded** while cloud is working — the health check reads a manifest, it doesn't touch the weights.
+
+if cloud fails, it drops to local and stops trying cloud first for a minute, so an offline afternoon doesn't burn a 30s timeout on every single frame. same in reverse.
+
+```bash
+ollama pull gemma4:e2b     # ~7 GB, optional — only needed for the offline fallback
+bun run check              # tells you which one it'd use and why
+```
+
+because the choice can vary per minute, **every entry records which backend answered it** (`analysis.provider`, `"local"` or `"cloud"`) and the timeline shows it as a small badge. so you can always tell where a given minute's screen text went.
+
+want to force it? pin it:
+
+```json
+{ "provider": "local" }
+```
+
+`"local"` never falls back — if ollama's down the entry just fails, and `bun run reanalyze` picks it up later. `"cloud"` never touches ollama at all, not even the health check.
+
+heads up on model size: on a 16 GB machine `gemma4:12b` and up will make things crawl. `e2b` is the small one and it's what the default expects.
+
 ## running it
 
 ```bash
@@ -53,6 +81,7 @@ optional `config.json` in the root, all keys optional (see `config.example.json`
 - `changeThreshold` — 5. how different a frame has to be to count as "changed" (higher = fewer calls, more stuff skipped)
 - `retentionDays` — 14. pngs older than this get deleted. the json stays forever
 - `analysisMode` — `"ocr"` (default) or `"vision"`
+- `provider` — `"auto"` (default), `"local"`, or `"cloud"`. see above
 - `excludeApps` — `["1Password", "Messages"]`. these never get captured at all
 - `display` — `"main"`
 - `port` — 4319
@@ -60,9 +89,12 @@ optional `config.json` in the root, all keys optional (see `config.example.json`
 `.env`:
 
 ```
-OPENAI_BASE_URL=...
+OPENAI_BASE_URL=...            # cloud
 OPENAI_API_KEY=...
 VISION_MODEL=gemma-4-31B-it
+
+OLLAMA_BASE_URL=http://localhost:11434/v1   # local, both optional
+OLLAMA_MODEL=gemma4:e2b
 ```
 
 ## where stuff lives

@@ -102,6 +102,20 @@ main {
   font-size: 12px;
 }
 
+/* Where the analysis happened. Muted — provenance, not decoration. */
+.chip.provider {
+  margin-left: auto;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  font-size: 10px;
+  opacity: 0.75;
+}
+
+.chip.provider.local {
+  border-color: color-mix(in srgb, var(--ok, #4ade80) 40%, var(--line));
+  color: var(--ok, #4ade80);
+}
+
 .hourgroup {
   margin-bottom: 18px;
 }
