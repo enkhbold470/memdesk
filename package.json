@@ -4,7 +4,35 @@
   "private": true,
   "type": "module",
   "description": "Local screenshot journal + AI activity log for macOS",
+  "license": "MIT",
+  "author": "Enkhbold Ganbold",
+  "homepage": "https://github.com/enkhbold470/memdesk#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/enkhbold470/memdesk.git"
+  },
+  "bugs": {
+    "url": "https://github.com/enkhbold470/memdesk/issues"
+  },
+  "keywords": [
+    "macos",
+    "screenshot",
+    "ocr",
+    "activity-log",
+    "time-tracking",
+    "local-first",
+    "privacy",
+    "ollama",
+    "bun"
+  ],
+  "engines": {
+    "bun": ">=1.2.0"
+  },
+  "os": [
+    "darwin"
+  ],
   "scripts": {
+    "typecheck": "tsc --noEmit",
     "start": "bun run src/index.ts",
     "server": "bun run src/server.ts",
     "demo": "MEMDESK_DEMO=1 bun run src/demo.ts && MEMDESK_DEMO=1 bun run src/server.ts",
@@ -22,6 +50,7 @@
     "sharp": "^0.33.5"
   },
   "devDependencies": {
-    "@types/bun": "latest"
+    "@types/bun": "latest",
+    "typescript": "^7.0.2"
   }
 }

@@ -4,6 +4,9 @@ screenshots my screen every minute, figures out what i was doing, dumps it to js
 
 macOS only. bun + typescript.
 
+[![ci](https://github.com/enkhbold470/memdesk/actions/workflows/ci.yml/badge.svg)](https://github.com/enkhbold470/memdesk/actions/workflows/ci.yml)
+[![license: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
+
 ![the timeline](docs/ui.svg)
 
 ## the idea
@@ -123,3 +126,13 @@ all gitignored. this is your screen history — don't commit it.
 ## not doing (yet)
 
 multiple monitors, single-window capture, search across days, anything non-mac, cloud sync.
+
+## contributing
+
+[CONTRIBUTING.md](CONTRIBUTING.md) — how to set up, what CI checks, and the handful
+of design decisions that look like bugs but aren't. found something that could leak
+screen history or a key? [report it privately](SECURITY.md).
+
+## license
+
+MIT — see [LICENSE](LICENSE).

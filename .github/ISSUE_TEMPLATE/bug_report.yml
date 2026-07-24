@@ -1,0 +1,68 @@
+name: Bug report
+description: Something doesn't work
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Before filing: run `bun run check`. It tests the OCR helper and does one
+        round trip to whichever provider it would pick, and it catches most of it.
+
+        **Don't paste screenshots of your own timeline** — that publishes whatever
+        was on your screen. `bun run demo` renders a synthetic day if you need to
+        show the UI.
+
+  - type: textarea
+    id: what
+    attributes:
+      label: What happened
+      description: And what you expected instead.
+    validations:
+      required: true
+
+  - type: textarea
+    id: check
+    attributes:
+      label: Output of `bun run check`
+      description: Redact the endpoint host if you'd rather not share it.
+      render: shell
+    validations:
+      required: false
+
+  - type: input
+    id: macos
+    attributes:
+      label: macOS version
+      placeholder: "26.1"
+    validations:
+      required: true
+
+  - type: input
+    id: bun
+    attributes:
+      label: Bun version
+      description: "`bun --version`"
+      placeholder: "1.3.2"
+    validations:
+      required: true
+
+  - type: dropdown
+    id: provider
+    attributes:
+      label: Which provider
+      options:
+        - auto (default)
+        - cloud
+        - local (ollama)
+        - not sure
+    validations:
+      required: true
+
+  - type: checkboxes
+    id: known
+    attributes:
+      label: Ruled out
+      options:
+        - label: Screen Recording permission is granted to whatever runs `bun start`, and I quit and reopened it afterwards
+        - label: The screenshots under `screenshots/` are not blank/black
+        - label: I'm not reporting something listed as deliberate in CONTRIBUTING.md
