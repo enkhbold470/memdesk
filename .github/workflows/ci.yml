@@ -5,6 +5,11 @@ on:
     branches: [main]
   pull_request:
 
+# Declared here rather than relying on the repo-level default, which is read-only
+# today but can be flipped org-wide without anyone touching this file.
+permissions:
+  contents: read
+
 # A new push to a PR makes the in-flight run pointless.
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
@@ -17,7 +22,12 @@ jobs:
     runs-on: macos-latest
 
     steps:
+      # Without this, checkout leaves the token in .git/config as an extraheader,
+      # where `bun install` lifecycle scripts and the test run could read it.
+      # Nothing here pushes, so there's nothing to keep it for.
       - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
 
       - uses: oven-sh/setup-bun@v2
         with:
