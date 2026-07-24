@@ -23,3 +23,5 @@ node_modules/
 
 # tooling artifacts
 .playwright-mcp/
+
+video/
